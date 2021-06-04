@@ -7,7 +7,7 @@ import (
 
 func TestMyContext(t *testing.T) {
 	ctx := context.Background()
-	c := &MyContext{}
+	c := NewMyContext()
 
 	c2 := c.WithValue(ctx, 1, 1)
 	t.Logf("c2: key = %v, value = %v", 1, c2.Value(1))

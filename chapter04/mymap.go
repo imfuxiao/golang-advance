@@ -43,12 +43,12 @@ func (m *MyMap) Delete(key interface{}) {
 }
 
 // LoadOrStore 如果存在, 返回现有值; 否则, 存储并返回给定值. 如果值存在则返回true, 如果存储了给定值, 则返回false.
-func (m *MyMap) LoadOrStore(key, value interface{}) (actual interface{}, loaded bool) {
+func (m *MyMap) LoadOrStore(key, value interface{}) (interface{}, bool) {
 	m.mux.RLock()
 
-	if actual, loaded = m.store[key]; loaded {
+	if actual, loaded := m.store[key]; loaded {
 		m.mux.RUnlock()
-		return
+		return actual, loaded
 	}
 
 	m.mux.RUnlock()
@@ -57,30 +57,38 @@ func (m *MyMap) LoadOrStore(key, value interface{}) (actual interface{}, loaded 
 		m.mux.Unlock()
 	}()
 
-	m.store[key] = value
-	actual, loaded = value, false
+	// double check
+	if actual, loaded := m.store[key]; loaded {
+		return actual, loaded
+	}
 
-	return
+	m.store[key] = value
+	return value, false
 }
 
 // LoadAndDelete 删除键的值, 并返回键的值(如果存在). 如果键值存在, 则返回true, 否则返回false
-func (m *MyMap) LoadAndDelete(key interface{}) (value interface{}, loaded bool) {
+func (m *MyMap) LoadAndDelete(key interface{}) (interface{}, bool) {
 	m.mux.RLock()
 
-	if v, exist := m.store[key]; !exist {
+	if _, exist := m.store[key]; !exist {
 		m.mux.RUnlock()
-		return
+		return nil, false
+	}
+
+	m.mux.RUnlock()
+	m.mux.Lock()
+	defer func() {
+		m.mux.Unlock()
+	}()
+
+	// double check
+	var value interface{}
+	if v, exist := m.store[key]; !exist {
+		return nil, false
 	} else {
 		value = v
 	}
 
-	m.mux.RUnlock()
-	m.mux.Lock()
-	defer func() {
-		m.mux.Unlock()
-	}()
-
 	delete(m.store, key)
-	loaded = true
-	return
+	return value, true
 }

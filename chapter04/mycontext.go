@@ -5,20 +5,21 @@ import (
 )
 
 type MyContext struct {
-	ctx context.Context
+	cache map[interface{}]interface{}
 }
 
-func NewMyContext(ctx context.Context) *MyContext {
+func NewMyContext() *MyContext {
 	return &MyContext{
-		ctx: ctx,
+		cache: map[interface{}]interface{}{},
 	}
 }
 
 func (m *MyContext) WithValue(parent context.Context, key, val interface{}) context.Context {
-	m.ctx = context.WithValue(parent, key, val)
-	return m.ctx
+	ctx := context.WithValue(parent, key, val)
+	m.cache[key] = val
+	return ctx
 }
 
 func (m *MyContext) Value(key interface{}) interface{} {
-	return m.ctx.Value(key)
+	return m.cache[key]
 }

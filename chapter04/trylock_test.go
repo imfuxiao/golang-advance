@@ -21,10 +21,11 @@ func TestMyLock(t *testing.T) {
 			}()
 
 			if lock.TryLock() {
-				time.Sleep(time.Second)
+				time.Sleep(time.Second * 1)
 				lock.Unlock()
 				t.Logf("-------- %d get lock and unlock", num)
 			} else {
+				time.Sleep(time.Second * 2)
 				t.Logf("%d can not get lock", num)
 			}
 		}(i)
